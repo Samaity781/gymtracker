@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Manage Sets – GymTracker{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'tracker:session_list' %}">Workouts</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'tracker:session_detail' entry.session.pk %}">{{ entry.session.date|date:"d M Y" }}</a></li>
+        <li class="breadcrumb-item active">{{ entry.exercise_name }}</li>
+      </ol>
+    </nav>
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>Sets: {{ entry.exercise_name }}</strong></div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {{ formset.management_form }}
+          {% for sf in formset %}
+          <div class="border rounded p-2 mb-2">
+            {{ sf|crispy }}
+            {% if formset.can_delete %}
+            <div class="form-check">
+              {{ sf.DELETE }}
+              <label class="form-check-label text-danger small" for="{{ sf.DELETE.id_for_label }}">Remove</label>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">Save Sets</button>
+            <a href="{% url 'tracker:session_detail' entry.session.pk %}" class="btn btn-outline-secondary">Back</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

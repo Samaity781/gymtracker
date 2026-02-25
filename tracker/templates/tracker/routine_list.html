@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}My Routines – GymTracker{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h2 class="h4"><i class="bi bi-list-task me-2"></i>My Routines</h2>
+  <a href="{% url 'tracker:routine_create' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> New Routine</a>
+</div>
+{% if routines %}
+<div class="row g-3">
+  {% for routine in routines %}
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h6>{{ routine.name }}</h6>
+        <p class="text-muted small">{{ routine.description|default:"–" }}</p>
+        <div class="d-flex flex-wrap gap-1">
+          {% for item in routine.items.all %}
+            <span class="badge bg-light text-dark border">{{ item.exercise_name }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <a href="{% url 'tracker:routine_edit' routine.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+        <a href="{% url 'tracker:routine_delete' routine.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">No routines yet. <a href="{% url 'tracker:routine_create' %}">Create one</a> to get started.</div>
+{% endif %}
+{% endblock %}

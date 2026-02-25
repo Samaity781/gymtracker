@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}My Profile – GymTracker{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-4 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        {% if profile.avatar %}
+          <img src="{{ profile.avatar.url }}" class="rounded-circle mb-3" width="100" height="100" alt="Avatar">
+        {% else %}
+          <div class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:100px;height:100px;">
+            <i class="bi bi-person-fill text-white" style="font-size:3rem;"></i>
+          </div>
+        {% endif %}
+        <h4>{{ user.full_name }}</h4>
+        <p class="text-muted small">{{ user.email }}</p>
+        <span class="badge {% if user.is_admin_role %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+          {{ user.get_role_display }}
+        </span>
+      </div>
+      <div class="card-footer text-center">
+        <a href="{% url 'accounts:profile_edit' %}" class="btn btn-sm btn-outline-primary me-2">
+          <i class="bi bi-pencil"></i> Edit Profile
+        </a>
+        <a href="{% url 'accounts:change_password' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-key"></i> Change Password
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header"><strong>Profile Details</strong></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Date of Birth</dt>
+          <dd class="col-sm-8">{{ profile.date_of_birth|default:"–" }}</dd>
+          <dt class="col-sm-4">Phone</dt>
+          <dd class="col-sm-8">{{ profile.phone|default:"–" }}</dd>
+          <dt class="col-sm-4">Emergency Contact</dt>
+          <dd class="col-sm-8">{{ profile.emergency_contact|default:"–" }}</dd>
+          <dt class="col-sm-4">Membership Since</dt>
+          <dd class="col-sm-8">{{ profile.membership_start|default:"–" }}</dd>
+          <dt class="col-sm-4">Bio</dt>
+          <dd class="col-sm-8">{{ profile.bio|default:"–" }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-sm-4">
+        <a href="{% url 'bookings:my_bookings' %}" class="card text-decoration-none text-center p-3 shadow-sm h-100">
+          <i class="bi bi-bookmark-check fs-2 text-primary"></i>
+          <div class="mt-2 fw-semibold">My Bookings</div>
+        </a>
+      </div>
+      <div class="col-sm-4">
+        <a href="{% url 'tracker:session_list' %}" class="card text-decoration-none text-center p-3 shadow-sm h-100">
+          <i class="bi bi-journal-medical fs-2 text-success"></i>
+          <div class="mt-2 fw-semibold">My Workouts</div>
+        </a>
+      </div>
+      <div class="col-sm-4">
+        <a href="{% url 'tracker:progress' %}" class="card text-decoration-none text-center p-3 shadow-sm h-100">
+          <i class="bi bi-graph-up fs-2 text-warning"></i>
+          <div class="mt-2 fw-semibold">Progress</div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

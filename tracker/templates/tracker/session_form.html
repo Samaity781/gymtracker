@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ action }} Workout – GymTracker{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-9">
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>{{ action }} Workout Session</strong></div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <h6 class="text-muted mb-3">Session Details</h6>
+          {{ form|crispy }}
+
+          <hr>
+          <h6 class="text-muted mb-2">Exercises</h6>
+          <p class="small text-muted">Add exercises below. You can add sets after saving.</p>
+
+          {{ formset.management_form }}
+          <div id="formset-container">
+            {% for ef in formset %}
+            <div class="border rounded p-3 mb-2 formset-row">
+              {% if ef.non_field_errors %}
+                <div class="alert alert-danger small">{{ ef.non_field_errors }}</div>
+              {% endif %}
+              {{ ef|crispy }}
+              {% if formset.can_delete %}
+                <div class="form-check">
+                  {{ ef.DELETE }}
+                  <label class="form-check-label text-danger small" for="{{ ef.DELETE.id_for_label }}">Remove this exercise</label>
+                </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">{{ action }} Session</button>
+            <a href="{% url 'tracker:session_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

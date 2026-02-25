@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Edit Profile – GymTracker{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-header"><strong><i class="bi bi-pencil-square me-2"></i>Edit Profile</strong></div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <h6 class="text-muted mb-3">Name</h6>
+          {{ name_form|crispy }}
+          <hr>
+          <h6 class="text-muted mb-3">Personal Details</h6>
+          {{ profile_form|crispy }}
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

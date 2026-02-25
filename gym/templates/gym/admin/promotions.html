@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Promotions Analytics – GymTracker{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">
+    <i class="bi bi-megaphone me-2"></i>Promotions Analytics
+  </h1>
+  <div class="text-muted small">CR3 — Featured Item Performance</div>
+</div>
+
+<div class="alert alert-light border small mb-4">
+  <strong>How it works:</strong>
+  impressions are recorded each time a featured item is rendered on the dashboard or class list.
+  Clicks are captured when a member follows a featured item's "View &amp; Book" link.
+  CTR = clicks / impressions × 100.
+</div>
+
+{% if analytics %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Item</th>
+        <th>Type</th>
+        <th class="text-end">Impressions</th>
+        <th class="text-end">Clicks</th>
+        <th style="width:200px;">CTR</th>
+        <th class="text-end">CTR %</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in analytics %}
+      <tr>
+        <td class="fw-semibold">{{ row.item }}</td>
+        <td>
+          <span class="badge bg-light text-dark border">{{ row.item_type }}</span>
+        </td>
+        <td class="text-end">{{ row.impressions }}</td>
+        <td class="text-end">{{ row.clicks }}</td>
+        <td>
+          {% if row.impressions %}
+          <div class="progress" style="height:8px;">
+            <div class="progress-bar bg-warning"
+                 style="width:{{ row.ctr }}%"
+                 title="{{ row.ctr }}% CTR">
+            </div>
+          </div>
+          {% else %}
+          <span class="text-muted small">No data</span>
+          {% endif %}
+        </td>
+        <td class="text-end fw-semibold">
+          {% if row.impressions %}{{ row.ctr }}%{% else %}–{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-2"></i>
+  No featured items found. Mark classes or equipment as "Featured" to start
+  collecting impression and click data.
+  <a href="{% url 'gym:admin_class_list' %}" class="alert-link">Manage Classes →</a>
+</div>
+{% endif %}
+
+{% endblock %}

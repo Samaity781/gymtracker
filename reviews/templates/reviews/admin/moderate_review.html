@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Moderate Review – GymTracker{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 mb-0"><i class="bi bi-shield-check me-2"></i>Moderate Review</h1>
+      <a href="{% url 'reviews:admin_review_list' %}" class="btn btn-sm btn-outline-secondary">
+        ← Back to queue
+      </a>
+    </div>
+
+    {# ── Review details ──────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Review #{{ review.pk }}</strong>
+        <span class="badge
+          {% if review.status == 'APPROVED' %}bg-success
+          {% elif review.status == 'HIDDEN' %}bg-danger
+          {% else %}bg-warning text-dark{% endif %}">
+          {{ review.get_status_display }}
+        </span>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm table-borderless mb-0">
+          <tr>
+            <th class="text-muted small" style="width:130px;">Reviewer</th>
+            <td>{{ review.user.email }}</td>
+          </tr>
+          <tr>
+            <th class="text-muted small">Item</th>
+            <td>
+              <span class="badge bg-light text-dark border me-1">{{ review.content_type.name|capfirst }}</span>
+              {{ review.item }}
+            </td>
+          </tr>
+          <tr>
+            <th class="text-muted small">Rating</th>
+            <td><span class="text-warning fw-bold fs-5">{{ review.stars_display }}</span></td>
+          </tr>
+          <tr>
+            <th class="text-muted small">Comment</th>
+            <td>{{ review.comment|default:"(no comment)" }}</td>
+          </tr>
+          <tr>
+            <th class="text-muted small">Submitted</th>
+            <td>{{ review.created_at|date:"d M Y, H:i" }}</td>
+          </tr>
+          {% if review.moderated_at %}
+          <tr>
+            <th class="text-muted small">Moderated</th>
+            <td>
+              {{ review.moderated_at|date:"d M Y, H:i" }}
+              {% if review.moderated_by %} by {{ review.moderated_by.email }}{% endif %}
+            </td>
+          </tr>
+          {% endif %}
+          {% if review.moderation_note %}
+          <tr>
+            <th class="text-muted small">Previous note</th>
+            <td class="text-muted small">{{ review.moderation_note }}</td>
+          </tr>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+
+    {# ── Moderation form ─────────────────────────────────────────────── #}
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>Moderation Decision</strong></div>
+      <div class="card-body">
+        <p class="small text-muted mb-3">
+          <strong>Approved</strong> reviews are visible to all members.
+          <strong>Hidden</strong> reviews are suppressed but not deleted — the audit trail is preserved.
+          A review can be re-moderated at any time.
+        </p>
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="id_moderation_note">
+              Moderation note <span class="text-muted fw-normal">(admin-only, optional)</span>
+            </label>
+            <textarea name="moderation_note" id="id_moderation_note" class="form-control" rows="3"
+                      placeholder="Explain your decision for audit purposes…">{{ form.moderation_note.value|default:"" }}</textarea>
+          </div>
+
+          <div class="d-flex gap-3">
+            <button type="submit" name="action" value="approve"
+                    class="btn btn-success {% if review.status == 'APPROVED' %}active{% endif %}">
+              <i class="bi bi-check-lg me-1"></i>Approve
+            </button>
+            <button type="submit" name="action" value="hide"
+                    class="btn btn-danger {% if review.status == 'HIDDEN' %}active{% endif %}">
+              <i class="bi bi-eye-slash me-1"></i>Hide
+            </button>
+            <a href="{% url 'reviews:admin_review_list' %}" class="btn btn-outline-secondary ms-auto">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

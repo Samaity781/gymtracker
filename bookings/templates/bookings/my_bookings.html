@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My Bookings – GymTracker{% endblock %}
+{% block nav_bookings_active %}active{% endblock %}
+{% block content %}
+<h2 class="h4 mb-4"><i class="bi bi-bookmark-check me-2"></i>My Bookings</h2>
+
+{% if bookings %}
+<div class="row g-3">
+  {% for booking in bookings %}
+  <div class="col-md-6">
+    <div class="card shadow-sm card-status-{{ booking.status|lower }}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h6 class="mb-1">
+              {% if booking.workout_class %}
+                <i class="bi bi-calendar3 me-1 text-primary"></i>{{ booking.workout_class.name }}
+              {% else %}
+                <i class="bi bi-dumbbell me-1 text-success"></i>{{ booking.equipment.name }}
+              {% endif %}
+            </h6>
+            <p class="text-muted small mb-1">
+              {% if booking.workout_class %}
+                {{ booking.workout_class.start_time|date:"D d M Y, H:i" }}
+                · {{ booking.workout_class.duration_minutes }} min
+              {% else %}
+                {{ booking.slot_start|date:"D d M Y, H:i" }} → {{ booking.slot_end|date:"H:i" }}
+              {% endif %}
+            </p>
+            <p class="text-muted small mb-0">Booked: {{ booking.booked_at|date:"d M Y" }}</p>
+          </div>
+          <span class="badge badge-{{ booking.status|lower }}">{{ booking.get_status_display }}</span>
+        </div>
+      </div>
+      {% if booking.status == 'BOOKED' %}
+      <div class="card-footer">
+        <form method="post" action="{% url 'bookings:cancel_booking' booking.pk %}"
+              onsubmit="return confirm('Cancel this booking?');">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-danger">Cancel Booking</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+  You have no bookings yet. <a href="{% url 'gym:class_list' %}">Browse classes</a> to get started.
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Book {{ equipment.name }} – GymTracker{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header"><strong><i class="bi bi-calendar-plus me-2"></i>Book: {{ equipment.name }}</strong></div>
+      <div class="card-body">
+        <p class="text-muted small">Capacity: {{ equipment.capacity }} simultaneous user(s). Choose your preferred slot.</p>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {{ form|crispy }}
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-success">Confirm Booking</button>
+            <a href="{% url 'gym:equipment_detail' equipment.pk %}" class="btn btn-outline-secondary">Back</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

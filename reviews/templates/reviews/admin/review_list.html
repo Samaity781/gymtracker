@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Review Moderation – GymTracker{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0"><i class="bi bi-star me-2"></i>Review Moderation Queue</h1>
+  <div class="text-muted small">CR4 — Moderation Workflow</div>
+</div>
+
+{# ── Status filter tabs ──────────────────────────────────────────────── #}
+<ul class="nav nav-tabs mb-4">
+  <li class="nav-item">
+    <a class="nav-link {% if not status_filter %}active{% endif %}" href="?">
+      All <span class="badge bg-secondary ms-1">{{ counts.all }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if status_filter == 'PENDING' %}active{% endif %}" href="?status=PENDING">
+      Pending <span class="badge bg-secondary ms-1">{{ counts.pending }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if status_filter == 'APPROVED' %}active{% endif %}" href="?status=APPROVED">
+      Approved <span class="badge bg-success ms-1">{{ counts.approved }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if status_filter == 'HIDDEN' %}active{% endif %}" href="?status=HIDDEN">
+      Hidden <span class="badge bg-danger ms-1">{{ counts.hidden }}</span>
+    </a>
+  </li>
+</ul>
+
+{% if reviews %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Reviewer</th>
+        <th>Item</th>
+        <th>Rating</th>
+        <th>Comment</th>
+        <th>Status</th>
+        <th>Submitted</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for review in reviews %}
+      <tr>
+        <td class="small">{{ review.user.email }}</td>
+        <td class="small">
+          <span class="badge bg-light text-dark border me-1">{{ review.content_type.name|capfirst }}</span>
+          {{ review.item }}
+        </td>
+        <td>
+          <span class="text-warning fw-semibold">{{ review.stars_display }}</span>
+        </td>
+        <td class="small text-muted" style="max-width:200px;">
+          {{ review.comment|truncatechars:80|default:"—" }}
+        </td>
+        <td>
+          <span class="badge
+            {% if review.status == 'APPROVED' %}bg-success
+            {% elif review.status == 'HIDDEN' %}bg-danger
+            {% else %}bg-warning text-dark{% endif %}">
+            {{ review.get_status_display }}
+          </span>
+        </td>
+        <td class="small text-muted">{{ review.created_at|date:"d M Y" }}</td>
+        <td>
+          <a href="{% url 'reviews:admin_moderate_review' review.pk %}"
+             class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-shield-check me-1"></i>Moderate
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-check-circle me-2"></i>No reviews in this category.
+</div>
+{% endif %}
+
+{% endblock %}

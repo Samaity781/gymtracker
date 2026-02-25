@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – GymTracker{% endblock %}
+{% block content %}
+<div class="row g-4">
+
+  {# ── Welcome ──────────────────────────────────────────────────────────── #}
+  <div class="col-12">
+    <div class="card bg-dark text-white shadow-sm">
+      <div class="card-body py-4">
+        <h2 class="h4 mb-1">
+          Welcome back, {{ user.first_name|default:"there" }}!
+        </h2>
+        <p class="mb-0 text-white-50">
+          Ready to train? Browse upcoming classes or check your bookings below.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# ── Quick actions ────────────────────────────────────────────────────── #}
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'gym:class_list' %}" class="card h-100 text-decoration-none text-dark shadow-sm">
+      <div class="card-body text-center py-4">
+        <i class="bi bi-calendar3 fs-1 text-primary"></i>
+        <div class="mt-2 fw-semibold">Browse Classes</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'gym:equipment_list' %}" class="card h-100 text-decoration-none text-dark shadow-sm">
+      <div class="card-body text-center py-4">
+        <i class="bi bi-dumbbell fs-1 text-success"></i>
+        <div class="mt-2 fw-semibold">Book Equipment</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'bookings:my_bookings' %}" class="card h-100 text-decoration-none text-dark shadow-sm">
+      <div class="card-body text-center py-4">
+        <i class="bi bi-bookmark-check fs-1 text-info"></i>
+        <div class="mt-2 fw-semibold">My Bookings</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'tracker:session_create' %}" class="card h-100 text-decoration-none text-dark shadow-sm">
+      <div class="card-body text-center py-4">
+        <i class="bi bi-plus-circle fs-1 text-warning"></i>
+        <div class="mt-2 fw-semibold">Log Workout</div>
+      </div>
+    </a>
+  </div>
+
+  {# ── Upcoming classes — CR3: featured first, click-tracked links ─────── #}
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="h5 mb-0">Upcoming Classes</h3>
+      <a href="{% url 'gym:class_list' %}" class="btn btn-sm btn-outline-primary">View all</a>
+    </div>
+    <div class="row g-3">
+      {% for cls in upcoming_classes %}
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100 {% if cls.is_featured %}border-warning{% endif %}">
+          {% if cls.image %}
+            <img src="{{ cls.image.url }}" class="card-img-top" alt="{{ cls.name }}" style="height:140px;object-fit:cover;">
+          {% endif %}
+          <div class="card-body">
+            {% if cls.is_featured %}
+              {# CR3: impression already recorded in dashboard view #}
+              <span class="badge bg-warning text-dark mb-1">
+                <i class="bi bi-star-fill"></i> Featured
+              </span>
+            {% endif %}
+            {% if cls.category %}
+              <span class="badge bg-light text-dark border mb-1">{{ cls.category.name }}</span>
+            {% endif %}
+            <h6 class="card-title mb-1 mt-1">{{ cls.name }}</h6>
+            <p class="card-text text-muted small">
+              <i class="bi bi-clock me-1"></i>{{ cls.start_time|date:"D d M, H:i" }}<br>
+              <i class="bi bi-person me-1"></i>{{ cls.instructor|default:"–" }}<br>
+              <i class="bi bi-people me-1"></i>{{ cls.available_spaces }}/{{ cls.capacity }} spaces
+            </p>
+          </div>
+          <div class="card-footer">
+            {# CR3: featured items route through click-tracking redirect #}
+            {% if cls.is_featured %}
+              <a href="{% url 'gym:featured_click' 'class' cls.pk %}"
+                 class="btn btn-sm btn-warning w-100">
+                <i class="bi bi-star me-1"></i>View &amp; Book
+              </a>
+            {% else %}
+              <a href="{% url 'gym:class_detail' cls.pk %}"
+                 class="btn btn-sm btn-primary w-100">View &amp; Book</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 text-muted">No upcoming classes scheduled.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Featured Equipment — CR3 ─────────────────────────────────────────── #}
+  {% if featured_equipment %}
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="h5 mb-0">
+        <i class="bi bi-star-fill text-warning me-2"></i>Featured Equipment
+      </h3>
+      <a href="{% url 'gym:equipment_list' %}" class="btn btn-sm btn-outline-secondary">View all</a>
+    </div>
+    <div class="row g-3">
+      {% for eq in featured_equipment %}
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-warning">
+          <div class="card-body">
+            <span class="badge bg-warning text-dark mb-1">
+              <i class="bi bi-star-fill"></i> Featured
+            </span>
+            {% if eq.category %}
+              <span class="badge bg-light text-dark border mb-1">{{ eq.category.name }}</span>
+            {% endif %}
+            <h6 class="mt-1">{{ eq.name }}</h6>
+            <p class="text-muted small mb-1">{{ eq.description|truncatewords:12 }}</p>
+            {% if eq.location %}
+              <p class="text-muted small mb-0">
+                <i class="bi bi-geo-alt me-1"></i>{{ eq.location }}
+              </p>
+            {% endif %}
+          </div>
+          <div class="card-footer">
+            {# CR3: click-tracked link for featured equipment #}
+            <a href="{% url 'gym:featured_click' 'equipment' eq.pk %}"
+               class="btn btn-sm btn-warning w-100">
+              <i class="bi bi-star me-1"></i>Details &amp; Book
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

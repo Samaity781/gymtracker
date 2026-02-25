@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}{{ workout_class.name }} – GymTracker{% endblock %}
+{% block nav_classes_active %}active{% endblock %}
+
+{% block content %}
+<div class="row">
+  {# ── Main details ───────────────────────────────────────────────────── #}
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4">
+      {% if workout_class.image %}
+        <img src="{{ workout_class.image.url }}" class="card-img-top" alt="{{ workout_class.name }}"
+             style="max-height:280px;object-fit:cover;">
+      {% endif %}
+      <div class="card-body">
+        <div class="mb-2">
+          {% if workout_class.is_featured %}
+            <span class="badge bg-warning text-dark me-1"><i class="bi bi-star-fill"></i> Featured</span>
+          {% endif %}
+          {% if workout_class.category %}
+            <span class="badge bg-light text-dark border">{{ workout_class.category.name }}</span>
+          {% endif %}
+          <span class="badge ms-1
+            {% if workout_class.status_label == 'Available' %}bg-success
+            {% elif workout_class.status_label == 'Full' %}bg-danger
+            {% elif workout_class.status_label == 'Past' %}bg-secondary
+            {% else %}bg-warning text-dark{% endif %}">
+            {{ workout_class.status_label }}
+          </span>
+        </div>
+
+        <h1 class="h3">{{ workout_class.name }}</h1>
+
+        {# CR4: aggregate rating display #}
+        {% if aggregate.total_count %}
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="fs-5 text-warning">
+            {% for i in "12345" %}
+              {% if forloop.counter <= aggregate.avg_rating|floatformat:"0"|add:"0" %}★{% else %}☆{% endif %}
+            {% endfor %}
+          </span>
+          <strong>{{ aggregate.avg_rating }}</strong>
+          <span class="text-muted small">/ 5 &nbsp;({{ aggregate.total_count }} review{{ aggregate.total_count|pluralize }})</span>
+        </div>
+        {% endif %}
+
+        {% if workout_class.description %}
+          <p class="text-muted">{{ workout_class.description }}</p>
+        {% endif %}
+
+        <table class="table table-sm table-borderless mb-0">
+          <tr><th class="text-muted small" style="width:150px">Date &amp; time</th>
+              <td>{{ workout_class.start_time|date:"D d M Y, H:i" }}</td></tr>
+          <tr><th class="text-muted small">Duration</th>
+              <td>{{ workout_class.duration_minutes }} minutes</td></tr>
+          <tr><th class="text-muted small">Instructor</th>
+              <td>{{ workout_class.instructor|default:"–" }}</td></tr>
+          <tr><th class="text-muted small">Location</th>
+              <td>{{ workout_class.location|default:"–" }}</td></tr>
+          <tr><th class="text-muted small">Capacity</th>
+              <td>{{ workout_class.available_spaces }} / {{ workout_class.capacity }} spaces available</td></tr>
+        </table>
+      </div>
+
+      <div class="card-footer">
+        {% if user_booking %}
+          <p class="mb-1 small text-muted">Your booking status:
+            <strong class="text-{{ user_booking.status|lower }}">{{ user_booking.get_status_display }}</strong>
+          </p>
+          {% if user_booking.status == 'BOOKED' %}
+            <form method="post" action="{% url 'bookings:cancel_booking' user_booking.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">Cancel booking</button>
+            </form>
+          {% endif %}
+        {% elif workout_class.is_upcoming and not workout_class.is_full and workout_class.is_active %}
+          <form method="post" action="{% url 'bookings:book_class' workout_class.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-bookmark-plus me-1"></i>Book this class
+            </button>
+          </form>
+        {% elif workout_class.is_full %}
+          <button class="btn btn-secondary" disabled>Class is full</button>
+        {% elif not workout_class.is_upcoming %}
+          <button class="btn btn-secondary" disabled>This class has passed</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ═══════════════════════════════════════════════════════════
+       CR4: Reviews section
+       ════════════════════════════════════════════════════════════ #}
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong><i class="bi bi-star me-2"></i>Reviews</strong>
+        {% if aggregate.total_count %}
+          <span class="badge bg-warning text-dark">{{ aggregate.avg_rating }}★</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+
+        {# CR4: Star breakdown bar chart — aggregate.star_breakdown is a dict {1:count, 2:count, …} #}
+        {% if aggregate.total_count %}
+        <div class="mb-4">
+          {% for star, count in aggregate.star_breakdown.items %}
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="small text-muted" style="width:30px;">{{ star }}★</span>
+            <div class="progress flex-grow-1" style="height:8px;">
+              <div class="progress-bar bg-warning"
+                   style="width:{% widthratio count aggregate.total_count 100 %}%">
+              </div>
+            </div>
+            <span class="small text-muted" style="width:20px;">{{ count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Submit / edit review form #}
+        {% if user_review %}
+          <div class="alert alert-light border mb-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <span class="text-warning">{{ user_review.stars_display }}</span>
+                <span class="badge ms-2
+                  {% if user_review.status == 'APPROVED' %}bg-success
+                  {% elif user_review.status == 'HIDDEN' %}bg-danger
+                  {% else %}bg-secondary{% endif %}">
+                  {{ user_review.get_status_display }}
+                </span>
+                {% if user_review.comment %}
+                  <p class="small mt-1 mb-0">{{ user_review.comment }}</p>
+                {% endif %}
+                {% if user_review.status == 'PENDING' %}
+                  <p class="small text-muted mt-1 mb-0">Awaiting moderation.</p>
+                {% endif %}
+              </div>
+              {% if user_review.is_editable %}
+                <a href="{% url 'reviews:edit_review' user_review.pk %}"
+                   class="btn btn-sm btn-outline-secondary">Edit</a>
+              {% endif %}
+            </div>
+          </div>
+        {% elif can_review %}
+          <div class="mb-4">
+            <h6 class="mb-2">Leave a review</h6>
+            <form method="post" action="{% url 'reviews:submit_review' content_type_id workout_class.pk %}">
+              {% csrf_token %}
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Rating</label>
+                <div class="d-flex gap-2">
+                  {% for i in "12345" %}
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="rating" value="{{ i }}"
+                           id="star{{ i }}" {% if forloop.last %}checked{% endif %}>
+                    <label class="form-check-label" for="star{{ i }}">{{ i }}★</label>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Comment (optional)</label>
+                <textarea name="comment" class="form-control form-control-sm" rows="3"
+                          placeholder="Share your experience…" maxlength="1000"></textarea>
+              </div>
+              <button type="submit" class="btn btn-sm btn-primary">
+                <i class="bi bi-send me-1"></i>Submit review
+              </button>
+            </form>
+          </div>
+        {% elif not user_review and user.is_authenticated %}
+          <p class="text-muted small">
+            <i class="bi bi-info-circle me-1"></i>Only members who have attended this class can leave a review.
+          </p>
+        {% endif %}
+
+        {# Approved reviews list #}
+        {% if approved_reviews %}
+          <hr>
+          {% for review in approved_reviews %}
+          <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <span class="text-warning fw-semibold">{{ review.stars_display }}</span>
+                <span class="ms-2 small text-muted">
+                  {{ review.user.get_full_name|default:review.user.email }}
+                </span>
+              </div>
+              <small class="text-muted">{{ review.created_at|date:"d M Y" }}</small>
+            </div>
+            {% if review.comment %}
+              <p class="small mt-1 mb-0 text-secondary">{{ review.comment }}</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted small mb-0">No approved reviews yet.</p>
+        {% endif %}
+
+      </div>{# end card-body #}
+    </div>{# end reviews card #}
+  </div>{# end col-8 #}
+
+  {# ── Sidebar ────────────────────────────────────────────────────────── #}
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>Quick Info</strong></div>
+      <div class="card-body small">
+        <p><i class="bi bi-people me-2 text-primary"></i>
+           <strong>{{ workout_class.booked_count }}</strong> / {{ workout_class.capacity }} booked
+        </p>
+        <p><i class="bi bi-eye me-2 text-secondary"></i>
+           {{ workout_class.view_count }} view{{ workout_class.view_count|pluralize }}
+        </p>
+        {% if workout_class.is_featured %}
+          <p><i class="bi bi-megaphone me-2 text-warning"></i>
+             {{ workout_class.impression_count }} impression{{ workout_class.impression_count|pluralize }}
+             &nbsp;·&nbsp;{{ workout_class.click_count }} click{{ workout_class.click_count|pluralize }}
+             {% if workout_class.ctr %}&nbsp;·&nbsp;{{ workout_class.ctr }}% CTR{% endif %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if user.is_admin_role %}
+    <div class="card shadow-sm mt-3">
+      <div class="card-header"><strong>Admin Actions</strong></div>
+      <div class="card-body d-grid gap-2">
+        <a href="{% url 'gym:admin_class_edit' workout_class.pk %}"
+           class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-pencil me-1"></i>Edit class
+        </a>
+        <a href="{% url 'reviews:admin_review_list' %}"
+           class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-star me-1"></i>Review queue
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .progress-bar { transition: width 0.4s ease; }
+</style>
+{% endblock %}

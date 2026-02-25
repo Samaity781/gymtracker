@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Classes – GymTracker{% endblock %}
+{% block nav_classes_active %}active{% endblock %}
+
+{% block content %}
+<div class="row">
+
+  {# ── CR1/CR2 Filter + Ranking sidebar ─────────────────────────────────── #}
+  <div class="col-md-3 mb-4">
+
+    <div class="card shadow-sm">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong><i class="bi bi-funnel me-2"></i>Filter Classes</strong>
+        {% if active_filter_count %}
+          <span class="badge bg-primary rounded-pill">{{ active_filter_count }} active</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <form method="get" novalidate>
+          {# Text search – FR-09 #}
+          <label class="form-label small text-muted fw-semibold text-uppercase">Search</label>
+          {{ form.q }}
+          {% if form.q.errors %}<div class="text-danger small">{{ form.q.errors }}</div>{% endif %}
+
+          {# Category – FR-08 #}
+          <div class="mt-2">
+            <label class="form-label small text-muted fw-semibold text-uppercase">Category</label>
+            {{ form.category }}
+          </div>
+
+          {# Date range – CR1 #}
+          <div class="mt-2">
+            <label class="form-label small text-muted fw-semibold text-uppercase">Date From</label>
+            {{ form.date_from }}
+          </div>
+          <div class="mt-2">
+            <label class="form-label small text-muted fw-semibold text-uppercase">Date To</label>
+            {{ form.date_to }}
+          </div>
+
+          {# Availability + upcoming – CR1 #}
+          <div class="form-check mt-3">
+            {{ form.available_only }}
+            <label class="form-check-label small" for="{{ form.available_only.id_for_label }}">
+              Available spaces only
+            </label>
+          </div>
+          <div class="form-check mt-1">
+            {{ form.upcoming_only }}
+            <label class="form-check-label small" for="{{ form.upcoming_only.id_for_label }}">
+              Upcoming classes only
+            </label>
+          </div>
+
+          {# Preserve current ranking mode across filter submits #}
+          {% if ranking_mode == 'smart' %}
+            <input type="hidden" name="ranking" value="smart">
+          {% endif %}
+
+          {% if form.errors %}
+            <div class="alert alert-warning mt-2 py-1 small">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="d-grid mt-3">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="bi bi-search me-1"></i>Apply Filters
+            </button>
+          </div>
+          {% if request.GET %}
+          <a href="{% url 'gym:class_list' %}" class="btn btn-link btn-sm w-100 mt-1 text-muted">
+            <i class="bi bi-x-circle me-1"></i>Clear all filters
+          </a>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    {# ── CR2: Ranking toggle — admin only ──────────────────────────────── #}
+    {% if user.is_admin_role %}
+    <div class="card shadow-sm mt-3 border-warning">
+      <div class="card-header bg-warning bg-opacity-10">
+        <small class="text-muted fw-semibold text-uppercase">
+          <i class="bi bi-sliders me-1"></i>CR2 Ranking Mode
+        </small>
+      </div>
+      <div class="card-body py-2">
+        <p class="small text-muted mb-2">
+          Smart ranking scores each class by featured status, availability
+          ratio, view + booking popularity, recency, and category activity.
+        </p>
+        <div class="d-grid gap-1">
+          <a href="?{{ filter_qs }}&ranking=default"
+             class="btn btn-sm {% if ranking_mode == 'default' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            <i class="bi bi-sort-down me-1"></i>Default
+          </a>
+          <a href="?{{ filter_qs }}&ranking=smart"
+             class="btn btn-sm {% if ranking_mode == 'smart' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+            <i class="bi bi-stars me-1"></i>Smart Ranking
+          </a>
+        </div>
+        {% if ranking_mode == 'smart' %}
+        <p class="small text-muted mt-2 mb-0">
+          Score shown on each card (0–100).
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>{# end sidebar #}
+
+  {# ── Class cards ──────────────────────────────────────────────────────── #}
+  <div class="col-md-9">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="h4 mb-0">
+        Workout Classes
+        <span class="badge bg-secondary ms-2 fs-6 fw-normal">{{ classes|length }}</span>
+      </h2>
+      {% if user.is_admin_role %}
+        <a href="{% url 'gym:admin_class_create' %}" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus-lg"></i> Add Class
+        </a>
+      {% endif %}
+    </div>
+
+    {# FR-20: show active query string so users see what filters are applied #}
+    {% if active_filter_count %}
+    <div class="alert alert-info alert-sm py-2 mb-3 small">
+      <i class="bi bi-funnel-fill me-1"></i>
+      {{ active_filter_count }} filter{{ active_filter_count|pluralize }} active
+      {% if ranking_mode == 'smart' %}&nbsp;·&nbsp;<i class="bi bi-stars me-1 text-warning"></i>Smart Ranking on{% endif %}
+      &nbsp;·&nbsp;<a href="{% url 'gym:class_list' %}" class="alert-link">Clear all</a>
+    </div>
+    {% endif %}
+
+    <div class="row g-3">
+      {% for cls in classes %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 {% if cls.is_featured %}border-warning{% endif %}">
+          {% if cls.image %}
+            <img src="{{ cls.image.url }}" class="card-img-top" alt="{{ cls.name }}" style="height:140px;object-fit:cover;">
+          {% endif %}
+          <div class="card-body">
+            <div class="mb-1">
+              {# CR3: featured badge #}
+              {% if cls.is_featured %}
+                <span class="badge bg-warning text-dark me-1">
+                  <i class="bi bi-star-fill"></i> Featured
+                </span>
+              {% endif %}
+              {% if cls.category %}
+                <span class="badge bg-light text-dark border">{{ cls.category.name }}</span>
+              {% endif %}
+              {# CR2: score badge — admin only in smart mode #}
+              {% if show_scores and cls.ranking_score is not None %}
+                <span class="badge bg-warning text-dark float-end" title="Ranking score">
+                  {{ cls.ranking_score }}
+                </span>
+              {% endif %}
+            </div>
+
+            <h6 class="card-title mb-1 mt-1">{{ cls.name }}</h6>
+            <p class="text-muted small mb-1">
+              <i class="bi bi-clock me-1"></i>{{ cls.start_time|date:"D d M, H:i" }}<br>
+              <i class="bi bi-person me-1"></i>{{ cls.instructor|default:"–" }}<br>
+              <i class="bi bi-geo-alt me-1"></i>{{ cls.location|default:"–" }}
+            </p>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap mt-2">
+              <span class="badge {% if cls.is_full %}bg-danger{% else %}bg-success{% endif %}">
+                {% if cls.is_full %}Full{% else %}{{ cls.available_spaces }} spaces{% endif %}
+              </span>
+              <span class="badge bg-light text-dark border">{{ cls.duration_minutes }} min</span>
+              {% if not cls.is_upcoming %}
+                <span class="badge bg-secondary">Past</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="card-footer">
+            {# CR3: featured items route through click tracker #}
+            {% if cls.is_featured %}
+              <a href="{% url 'gym:featured_click' 'class' cls.pk %}" class="btn btn-sm btn-warning w-100">
+                <i class="bi bi-star me-1"></i>View Details
+              </a>
+            {% else %}
+              <a href="{% url 'gym:class_detail' cls.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                View Details
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="alert alert-info">
+          <i class="bi bi-search me-2"></i>No classes found.
+          <a href="{% url 'gym:class_list' %}" class="alert-link">Clear filters</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>{# end .row #}
+  </div>{# end col-9 #}
+
+</div>{# end .row #}
+{% endblock %}

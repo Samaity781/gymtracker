@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Session {{ session.date }} – GymTracker{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'tracker:session_list' %}">Workouts</a></li>
+    <li class="breadcrumb-item active">{{ session.date|date:"d M Y" }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h2 class="h4 mb-0">{{ session.name|default:"Workout Session" }}</h2>
+    <p class="text-muted small">
+      {{ session.date|date:"D d M Y" }}
+      {% if session.start_time %} · {{ session.start_time|time:"H:i" }}
+        {% if session.end_time %}– {{ session.end_time|time:"H:i" }}{% endif %}
+      {% endif %}
+      {% if session.duration_minutes %} · {{ session.duration_minutes }} min{% endif %}
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'tracker:session_edit' session.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+    <a href="{% url 'tracker:session_delete' session.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+  </div>
+</div>
+
+{% if session.notes %}
+<div class="alert alert-light border">{{ session.notes }}</div>
+{% endif %}
+
+<div class="row g-3 mb-3">
+  <div class="col-sm-4">
+    <div class="card text-center py-2 shadow-sm">
+      <div class="fw-bold text-primary fs-4">{{ session.entries.count }}</div>
+      <div class="small text-muted">Exercises</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card text-center py-2 shadow-sm">
+      <div class="fw-bold text-success fs-4">{{ session.total_volume_kg }} kg</div>
+      <div class="small text-muted">Total Volume</div>
+    </div>
+  </div>
+</div>
+
+{% for entry in session.entries.all %}
+<div class="card shadow-sm mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>{{ forloop.counter }}. {{ entry.exercise_name }}</strong>
+    <a href="{% url 'tracker:entry_sets' entry.pk %}" class="btn btn-xs btn-sm btn-outline-secondary">
+      Manage Sets
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Set</th><th>Reps</th><th>Weight (kg)</th><th>RPE</th><th>Warm-up</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in entry.sets.all %}
+        <tr {% if s.is_warmup %}class="text-muted"{% endif %}>
+          <td>{{ s.set_number }}</td>
+          <td>{{ s.reps }}</td>
+          <td>{{ s.weight_kg }}</td>
+          <td>{{ s.rpe|default:"–" }}</td>
+          <td>{% if s.is_warmup %}<i class="bi bi-check-circle text-warning"></i>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted text-center small">No sets logged yet. <a href="{% url 'tracker:entry_sets' entry.pk %}">Add sets</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% empty %}
+<div class="alert alert-info">No exercises logged for this session.</div>
+{% endfor %}
+{% endblock %}

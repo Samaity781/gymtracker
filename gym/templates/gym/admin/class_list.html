@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Manage Classes – GymTracker{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h2 class="h4"><i class="bi bi-calendar-event me-2"></i>Manage Classes</h2>
+  <a href="{% url 'gym:admin_class_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Class</a>
+</div>
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Name</th><th>Category</th><th>Date/Time</th><th>Capacity</th><th>Status</th><th>Featured</th><th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cls in classes %}
+        <tr class="{% if not cls.is_active %}text-muted{% endif %}">
+          <td>{{ cls.name }}</td>
+          <td>{{ cls.category|default:"–" }}</td>
+          <td class="small">{{ cls.start_time|date:"d M Y H:i" }}</td>
+          <td>{{ cls.booked_count }}/{{ cls.capacity }}</td>
+          <td>
+            {% if cls.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+          </td>
+          <td>{% if cls.is_featured %}<i class="bi bi-star-fill text-warning"></i>{% else %}–{% endif %}</td>
+          <td class="text-end">
+            <a href="{% url 'gym:admin_class_edit' cls.pk %}" class="btn btn-xs btn-sm btn-outline-secondary">Edit</a>
+            <form method="post" action="{% url 'gym:admin_class_toggle' cls.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button class="btn btn-xs btn-sm {% if cls.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                {% if cls.is_active %}Deactivate{% else %}Activate{% endif %}
+              </button>
+            </form>
+            <form method="post" action="{% url 'gym:admin_class_delete' cls.pk %}" class="d-inline"
+                  onsubmit="return confirm('Delete this class?');">
+              {% csrf_token %}
+              <button class="btn btn-xs btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No classes yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
